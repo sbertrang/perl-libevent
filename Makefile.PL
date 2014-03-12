@@ -1,3 +1,7 @@
+
+use strict;
+use warnings;
+
 use ExtUtils::MakeMaker;
 
 my $libevent_libs = `pkg-config --libs libevent`;
