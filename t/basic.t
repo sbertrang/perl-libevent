@@ -12,7 +12,9 @@ my $base = LibEvent::EventBase->new;
 {
     {
         my $ev = $base->timer_new(0, sub { fail("Should not be called") });
+        ok !$ev->pending, "not pending yet";
         $ev->add(2);
+        ok $ev->pending, "now pending";
     }
     is $base->loop, 1;
 }
@@ -28,7 +30,9 @@ my $base = LibEvent::EventBase->new;
             ok( $diff >= 0.49 && $diff <= 0.51, "timer after 0.5s (+/- 0.01)");
             undef $ev1; # TODO: can we fix this? (it cycle $ev1 and they destroys after $base :-(
         });
+    ok !$ev1->pending, "not yet scheduled";
     $ev1->add(0.5); # 0.5 second 
+    ok $ev1->pending, "now waiting";
 
     $tm1 = time;
     is $base->loop, 1;
@@ -40,9 +44,12 @@ my $base = LibEvent::EventBase->new;
     $ev = $base->timer_new(EV_PERSIST, sub {
             $cnt--;
             is $ev->events, EV_TIMEOUT|EV_PERSIST, "events mask is consistent";
+            ok $ev->pending, "still pending";
             undef $ev if $cnt == 0;
         });
+    ok !$ev->pending, "not pending yet";
     $ev->add(0.05);
+    ok $ev->pending, "now pending";
 
     is $base->loop, 1;
     is $cnt, 0, "counter now empty";
@@ -53,9 +60,12 @@ my $base = LibEvent::EventBase->new;
     my $ev;
     $ev = $base->timer_new(EV_PERSIST, sub {
             $cnt--;
+            ok shift->pending, "still pending";
             is $base->break, 0, "break return success status";
         });
+    ok !$ev->pending, "not pending yet";
     $ev->add(0.05);
+    ok $ev->pending, "now pending";
 
     is $base->loop, 0;
     is $cnt, 1, "only one event fire";
@@ -69,10 +79,14 @@ my $base = LibEvent::EventBase->new;
             ++$cnt;
             if ($cnt == 1) {
                 ok 1, "First timer invocatin, re-add it";
+                ok !$e->pending, "not yet pending again";
                 $e->add(0.05);
+                ok $e->pending, "now pending again";
             }
         });
+    ok !$ev->pending, "not yet pending";
     $ev->add(0.05);
+    ok $ev->pending, "now pending";
 
     is $base->loop, 1;
     is $cnt, 2, "two events gotten";
